@@ -1,0 +1,331 @@
+---
+title: "Homework 1, Multivariate Analysis, Spring 2025"
+author: "313657003周佳萱"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<style type="text/css">
+
+body{ /* Normal  */
+      font-size: 15px;
+  }
+  
+td {  /* Table  */
+  font-size: 13px;
+}
+
+</style>
+
+# Notes
+
+The homework questions are from the exercises of Johnson and Wichern. *Applied Multivariate Statistical Analysis* (6th ed.). Upper Saddle River: Prentice Hall, 2007.
+
+# Data
+
+In this homework, use the data in Table 4.6 (page 207) (`T4-6.csv`) for the analysis. Please refer to chapter 4, exercise 4.39 for the details of the data. 
+
+# Questions
+
+### 1.  Chapter 1, exercise 1.19: use the variables independence, support, benevolence, conformity, and leadership for the analysis.(Create the scatter plot and boxplot.)
+
+```{r}
+# Load necessary library
+library(readr)
+
+# Read the CSV file
+file_path <- "T4-6.csv"
+df <- read.csv(file_path, header = FALSE)
+
+# Add column names
+colnames(df) <- c("Indep", "Supp", "Benev", "Conform", "Leader", "Gender", "Socio")
+
+# Display the updated dataframe
+head(df)
+```
+
+
+### Scatter Plot
+```{r scatter_plot}
+# Create scatter plot matrix
+pairs(df[, c("Indep", "Supp", "Benev", "Conform", "Leader")], main="Scatter Plot Matrix")
+```
+
+### Boxplot
+```{r boxplot}
+# Create boxplots for the selected variables
+boxplot(df[, c("Indep", "Supp", "Benev", "Conform", "Leader")], 
+        main = "Boxplots of Variables", 
+        xlab = "Variable", 
+        ylab = "Value", 
+        col = "lightgray")
+```
+
+
+
+### 2.  Chapter 1, exercise 1.26 (a): use the variables independence, support, benevolence, conformity, and leadership for the analysis.(Compute the x_bar, Sn, and R arrays. Interpret the pairwise correlations. Do some of these variables appear to distinguish one breed from another? )
+
+
+### Compute Sample Means
+```{r sample_means}
+# Compute means
+x_bar <- colMeans(df[, c("Indep", "Supp", "Benev", "Conform", "Leader")])
+print(x_bar)
+```
+
+### Compute Sample Covariance Matrix
+```{r sample_covariance}
+# Compute covariance matrix
+Sn <- cov(df[, c("Indep", "Supp", "Benev", "Conform", "Leader")])
+print(Sn)
+```
+
+### Compute Sample Correlation Matrix
+```{r sample_correlation}
+# Compute correlation matrix
+R <- cor(df[, c("Indep", "Supp", "Benev", "Conform", "Leader")])
+print(R)
+```
+
+### Interpret the pairwise correlations
+Independence vs. Benevolence(r=−0.5612):負相關，Independence越高，Benevolence越低。越獨立的個體，通常較不會表現出關懷或善良的行為。
+
+Independence vs. Conformity(r=-0.4714) :負相關，Independence越高，Conformity越低。代表 越獨立的個體，越不願意遵守規則。
+
+Benevolence vs. Leadership(r=-0.4915):負相關，Benevolence越高，Leadership越低。越善良、關懷他人的人，通常不太具有強勢的領導風格。
+
+Support vs. Benevolence (r=0.0184):Support 和Benevolence幾乎無關。Support與 Benevolence幾乎沒有關聯。是否願意支持他人，與他是否仁慈沒有明顯的線性關係。
+
+
+### 3.  Chapter 2, exercises 2.7: use the sample variance-covariance matrix $\boldsymbol{S}_{n}$ obtained in Question 2 for the analysis.
+
+### (a) Compute the Eigenvalues and Eigenvectors
+```{r eigenvalues_vectors}
+# Compute covariance matrix
+Sn <- cov(df[, c("Indep", "Supp", "Benev", "Conform", "Leader")])
+
+# Compute eigenvalues and eigenvectors
+eigen_decomp <- eigen(Sn)
+eigenvalues <- eigen_decomp$values
+eigenvectors <- eigen_decomp$vectors
+
+# Display results
+eigenvalues
+eigenvectors
+```
+
+
+### (b) Spectral Decomposition
+```{r spectral_decomposition}
+# Compute spectral decomposition
+spectral_dec <- eigenvectors %*% diag(eigenvalues) %*% solve(eigenvectors)
+
+# Display results
+spectral_dec
+```
+
+### (c) Compute the Inverse of $A⁻¹$
+```{r inverse_matrix}
+# Compute inverse of covariance matrix
+Sn_inv <- solve(Sn)
+
+# Display results
+Sn_inv
+```
+
+
+### (d) Compute Eigenvalues and Eigenvectors of $A⁻¹$
+```{r eigen_inverse}
+# Compute eigenvalues and eigenvectors of inverse matrix
+eigen_decomp_inv <- eigen(Sn_inv)
+eigenvalues_inv <- eigen_decomp_inv$values
+eigenvectors_inv <- eigen_decomp_inv$vectors
+
+# Display results
+eigenvalues_inv
+eigenvectors_inv
+```
+
+
+### 4.  Chapter 4, exercises 4.39. Please first follow the steps in page 189 to identify outliers, and delete these identified outliers, if any, before doing questions in (a)-(c).
+
+### Identify outliers, and delete these identified outliers
+#### 1. Make a dot plot for each variable. 
+
+```{r dot_plot}
+# Create dot plots
+par(mfrow=c(3,2))  
+for (var in c("Indep", "Supp", "Benev", "Conform", "Leader")) {
+  dotchart(df[[var]], main = paste("Dot Plot of", var), xlab = var, frame.plot = FALSE)
+}
+par(mfrow=c(1,1))  
+
+```
+
+根據Dot plot，在Benev中小於3和在Leader中大於27的點可能為離群值，要再做更進一步的檢查。
+
+
+#### 2. Make a scatter plot for each pair of variables. 
+
+```{r scatter_plot1}
+# Create scatter plot matrix
+pairs(df[, c("Indep", "Supp", "Benev", "Conform", "Leader")], main="Scatter Plot Matrix")
+```
+
+根據scatter plot，在Indep vs. Benev、Benev vs. Conform 有幾個點偏離群體，要做更進一步的檢查。
+
+#### 3. Calculate the standardized values
+
+```{r standardized values}
+# standardized values
+standardized_df <- as.data.frame(scale(df[, c("Indep", "Supp", "Benev", "Conform", "Leader")]))
+
+# Pick the standardized values greater than 3 or less than -3
+outliers <- which(standardized_df > 3 | standardized_df < -3, arr.ind = TRUE)
+print(outliers)
+```
+
+計算標準化值若大於3和小於-3判定為離群值，發現沒有資料為離群值。
+
+#### 4. Calculate the generalized squared distances. Examine these distances for unusually large values. In a chi-square plot, these would be the points farthest from the origin. 
+
+```{r generalized_squared_distances}
+
+# Compute square distance matrix
+
+diff <- df[, c("Indep", "Supp", "Benev", "Conform", "Leader")] - rowMeans(df[, c("Indep", "Supp", "Benev", "Conform", "Leader")])
+#diff
+S <- cov(df[, c("Indep", "Supp", "Benev", "Conform", "Leader")])
+Sn_inv <- solve(S) 
+
+# Compute d square
+d_squared <- apply(diff, 1, function(x) t(x) %*% Sn_inv %*% x)
+
+# Find chi-square critical value at alpha = 0.05 with 5 degrees of freedom
+chi_square_threshold <- qchisq(0.95, df = 5) 
+
+# Identify extreme outliers based on chi-square threshold
+outliers_1 <- which(d_squared > chi_square_threshold)
+print(outliers_1)
+
+# Delete the outliers from steps3 and step4
+outlier_indices <- unique(c(outliers[, 1], outliers_1))
+df_final <- df[-outlier_indices, ]
+
+# Display the cleaned data
+head(df_final)
+```
+
+計算資料的$d^2$，若大於 $\chi^2_{0.05,5}$ 則判定為離群值並刪除。最後，將步驟3和步驟4的離群值刪除。
+
+### (a) Examine each of the variables independence, support, benevolence, conformity and leadership for marginal normality. 
+
+```{r QQplot}
+par(mfrow = c(2, 3))
+
+vars <- c("Indep", "Supp", "Benev", "Conform", "Leader")
+
+for (var in vars) {
+ qqnorm(df_final[[var]], main = paste("Q-Q Plot for", var))
+  qqline(df_final[[var]], col = "red") 
+}
+
+par(mfrow = c(1, 1))
+```
+
+
+
+```{r Shapiro-Wilk}
+library(stats)
+
+shapiro_results <- data.frame()
+
+# Do Shapiro-Wilk Test
+for (var in c("Indep", "Supp", "Benev", "Conform", "Leader")) {
+  test <- shapiro.test(df_final[[var]])  
+  
+  shapiro_results <- rbind(shapiro_results, data.frame(
+    Variable = var,
+    Statistic = test$statistic,
+    P_value = test$p.value
+  ))
+}
+
+
+print(shapiro_results)
+
+```
+
+$H_0$:樣本來自常態分佈
+
+$H_1$:樣本不來自常態分佈
+
+alpha = 0.05
+
+假如p-value<0.05，拒絕$H_0$
+Indep、Supp、Leader拒絕$H_0$，有強烈的證據說樣本不來自常態分佈(非常態)
+
+Benev、Conform不拒絕$H_0$，沒有有強烈的證據說樣本不來自常態分佈(常態)
+
+
+### (b) Using all five variables, check for multivariate normality. 
+
+```{r Chi-square Q-Q Plot}
+x_bar <- rowMeans(df_final[, c("Indep", "Supp", "Benev", "Conform", "Leader")])
+S_inv <- solve(cov(df_final[, c("Indep", "Supp", "Benev", "Conform", "Leader")]))
+diff <- as.matrix(df_final[, c("Indep", "Supp", "Benev", "Conform", "Leader")]) - x_bar
+d_squared <- rowSums((diff %*% S_inv) * diff)
+
+sort_d = sort(d_squared)
+n <- nrow(df_final)
+p <- ncol(df_final[, c("Indep", "Supp", "Benev", "Conform", "Leader")])
+chi_theoretical <- qchisq((1:n - 0.5) / n, df = p)
+
+# Draw Chi-square Q-Q Plot
+qqplot(chi_theoretical, sort_d,
+       main = "Chi-square Q-Q Plot for Multivariate Normality",
+       xlab = "Theoretical Quantiles (Chi-square)", 
+       ylab = "Observed D_squared Distances")
+abline(0, 1, col = "red", lwd = 2)
+
+```
+
+根據Chi-square Q-Q Plot可以發現值偏離斜率為1 的線，推測這個數據沒有服從多重常態。
+
+### (c) Refer to part (a). For those variables that are nonnormal, determine the transformation that makes them more nearly normal. 
+
+```{r Normality}
+# Check the Indep,Supp,Leader  skewnwss
+hist(df_final$Indep, main = "Original Supp", col = "lightblue")   # right skewness
+hist(df_final$Supp, main = "Original Supp", col = "lightblue")   # left skewness
+hist(df_final$Leader, main = "Original Leader", col = "lightblue") # right skewness
+
+# Transform data
+# log transform of data
+df_final$Indep_log <- log(df_final$Indep + 1)
+# square of data
+df_final$Supp_squ <- (df_final$Supp) ** 2
+# log transform of data
+df_final$Leader_log <- log(df_final$Leader + 1)
+
+# Check the normality after transforming
+par(mfrow = c(2, 2))
+qqnorm(df_final$Indep_log, main = paste("Q-Q Plot for transform Indep"))
+qqline(df_final$Indep_log, col = "red") 
+qqnorm(df_final$Supp_squ, main = paste("Q-Q Plot for transform Supp"))
+qqline(df_final$Supp_squ, col = "red") 
+qqnorm(df_final$Leader_log, main = paste("Q-Q Plot for transform Leader"))
+qqline(df_final$Leader_log, col = "red") 
+```
+
+由(a)得知，Indep、Supp、Leader不來自常態分佈，根據直方圖，可以發現Supp左偏尾，Indep、Leader右偏尾，所以對Supp做平方轉換，對Indep、Leader做log轉換，使資料較為常態。
+
+
+
+
+
+
